@@ -1,4 +1,5 @@
 import argparse
+import shutil
 import tempfile
 import wave
 from pathlib import Path
@@ -46,6 +47,16 @@ def parse_args():
     return parser.parse_args()
 
 
+def require_ffmpeg():
+    if shutil.which("ffmpeg"):
+        return
+
+    raise RuntimeError(
+        "ffmpeg is required by lightning-whisper-mlx to decode audio. "
+        "Install it with `brew install ffmpeg`, then run this script again."
+    )
+
+
 def write_wav(path: Path, audio: np.ndarray, sample_rate: int):
     clipped = np.clip(audio, -1.0, 1.0)
     pcm = (clipped * 32767).astype(np.int16)
@@ -84,6 +95,7 @@ def transcribe_chunk(whisper: LightningWhisperMLX, audio: np.ndarray):
 
 def run_realtime_transcriber():
     args = parse_args()
+    require_ffmpeg()
     whisper = LightningWhisperMLX(model=args.model, batch_size=args.batch_size, quant=None)
 
     print("Real-time speech-to-text is running.")
